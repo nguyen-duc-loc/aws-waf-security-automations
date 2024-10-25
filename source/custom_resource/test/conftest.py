@@ -10,6 +10,7 @@
 #  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
 #  and limitations under the License.                                                                                #
 ######################################################################################################################
+from types import SimpleNamespace
 
 import pytest
 import boto3
@@ -19,12 +20,6 @@ from moto import (
     mock_logs,
     mock_wafv2
 )
-
-class Context:
-    def __init__(self, invoked_function_arn, log_group_name, log_stream_name):
-       self.invoked_function_arn = invoked_function_arn
-       self.log_group_name = log_group_name
-       self.log_stream_name = log_stream_name
 
 @pytest.fixture(scope='module', autouse=True)
 def aws_credentials():
@@ -38,7 +33,14 @@ def aws_credentials():
  
 @pytest.fixture(scope="session")
 def example_context():
-    return Context(':::invoked_function_arn', 'log_group_name', 'log_stream_name')
+    return SimpleNamespace(**{
+    'function_name': 'foo',
+    'memory_limit_in_mb': '512',
+    'invoked_function_arn': ':::invoked_function_arn',
+    'log_group_name': 'log_group_name',
+    'log_stream_name': 'log_stream_name',
+    'aws_request_id': 'baz'
+})
 
 @pytest.fixture(scope="session")
 def s3_client():

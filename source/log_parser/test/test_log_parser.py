@@ -1,20 +1,19 @@
-###############################################################################
-#  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.    #
-#                                                                             #
-#  Licensed under the Apache License, Version 2.0 (the "License").            #
-#  You may not use this file except in compliance with the License.
-#  A copy of the License is located at                                        #
-#                                                                             #
-#      http://www.apache.org/licenses/LICENSE-2.0                             #
-#                                                                             #
-#  or in the "license" file accompanying this file. This file is distributed  #
-#  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, express #
-#  or implied. See the License for the specific language governing permissions#
-#  and limitations under the License.                                         #
-###############################################################################
+#  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#  SPDX-License-Identifier: Apache-2.0
 
 from os import environ
+from types import SimpleNamespace
+
 from log_parser import log_parser
+
+context = SimpleNamespace(**{
+    'function_name': 'foo',
+    'memory_limit_in_mb': '512',
+    'invoked_function_arn': ':::invoked_function_arn',
+    'log_group_name': 'log_group_name',
+    'log_stream_name': 'log_stream_name',
+    'aws_request_id': 'baz'
+})
 
 
 UNDEFINED_HANDLER_MESSAGE = "[lambda_handler] undefined handler for this type of event"
@@ -29,7 +28,7 @@ TYPE_ERROR_MESSAGE = "TypeError: string indices must be integers"
 def test_undefined_handler_event():
     event = {"test": "value"}
     result = {"message": UNDEFINED_HANDLER_MESSAGE}
-    assert result == log_parser.lambda_handler(event, {})
+    assert result == log_parser.lambda_handler(event, context)
 
 
 def test_undefined_handler_records(cloudfront_log_lambda_parser_test_event_setup):
@@ -37,14 +36,14 @@ def test_undefined_handler_records(cloudfront_log_lambda_parser_test_event_setup
     UNDEFINED_HANDLER_MESSAGE = "[lambda_handler] undefined handler for bucket %s" % environ["APP_ACCESS_LOG_BUCKET"]
     environ.pop('APP_ACCESS_LOG_BUCKET')
     result = {"message": UNDEFINED_HANDLER_MESSAGE}
-    assert result == log_parser.lambda_handler(event, {})
+    assert result == log_parser.lambda_handler(event, context)
 
 
 def test_cloudfront_log_athena_parser(app_log_athena_parser_test_event_setup):
     environ['LOG_TYPE'] = "CLOUDFRONT"
     event = app_log_athena_parser_test_event_setup
     result = {"message": ATHENA_LOG_PARSER_PROCESSED_MESSAGE}
-    assert result == log_parser.lambda_handler(event, {})
+    assert result == log_parser.lambda_handler(event, context)
     environ.pop('LOG_TYPE')
 
 
@@ -52,7 +51,7 @@ def test_alb_log_athena_parser(app_log_athena_parser_test_event_setup):
     environ['LOG_TYPE'] = "ALB"
     event = app_log_athena_parser_test_event_setup
     result = {"message": ATHENA_LOG_PARSER_PROCESSED_MESSAGE}
-    assert result == log_parser.lambda_handler(event, {})
+    assert result == log_parser.lambda_handler(event, context)
     environ.pop('LOG_TYPE')
 
 
@@ -60,21 +59,21 @@ def test_waf_log_athena_parser(waf_log_athena_parser_test_event_setup):
     environ['LOG_TYPE'] = "WAF"
     event = waf_log_athena_parser_test_event_setup
     result = {"message": ATHENA_LOG_PARSER_PROCESSED_MESSAGE}
-    assert result == log_parser.lambda_handler(event, {})
+    assert result == log_parser.lambda_handler(event, context)
     environ.pop('LOG_TYPE')
 
 
 def test_app_log_athena_result_processor(app_log_athena_query_result_test_event_setup):
     event = app_log_athena_query_result_test_event_setup
     result = {"message": ATHENA_APP_LOG_QUERY_RESULT_PROCESSED_MESSAGE}
-    assert result == log_parser.lambda_handler(event, {})
+    assert result == log_parser.lambda_handler(event, context)
     environ.pop('APP_ACCESS_LOG_BUCKET')
 
 
 def test_waf_log_athena_result_processor(waf_log_athena_query_result_test_event_setup):
     event = waf_log_athena_query_result_test_event_setup
     result = {"message": ATHENA_WAF_LOG_QUERY_RESULT_PROCESSED_MESSAGE}
-    assert result == log_parser.lambda_handler(event, {})
+    assert result == log_parser.lambda_handler(event, context)
     environ.pop('WAF_ACCESS_LOG_BUCKET')
     
 
@@ -82,7 +81,7 @@ def test_cloudfront_log_lambda_parser(cloudfront_log_lambda_parser_test_event_se
     environ['LOG_TYPE'] = "cloudfront"
     event = cloudfront_log_lambda_parser_test_event_setup
     result = {"message": APP_LOG_LAMBDA_PARSER_PROCESSED_MESSAGE}
-    assert result == log_parser.lambda_handler(event, {})
+    assert result == log_parser.lambda_handler(event, context)
     environ.pop('APP_ACCESS_LOG_BUCKET')
     environ.pop('LOG_TYPE')
 
@@ -91,7 +90,7 @@ def test_alb_log_lambda_parser(alb_log_lambda_parser_test_event_setup):
     environ['LOG_TYPE'] = "alb"
     event = alb_log_lambda_parser_test_event_setup
     result = {"message": APP_LOG_LAMBDA_PARSER_PROCESSED_MESSAGE}
-    assert result == log_parser.lambda_handler(event, {})
+    assert result == log_parser.lambda_handler(event, context)
     environ.pop('APP_ACCESS_LOG_BUCKET')
     environ.pop('LOG_TYPE')
 
@@ -100,7 +99,7 @@ def test_alb_log_lambda_parser_over_ip_range_limit(alb_log_lambda_parser_test_ev
     environ['LIMIT_IP_ADDRESS_RANGES_PER_IP_MATCH_CONDITION'] = '1'
     event = alb_log_lambda_parser_test_event_setup
     result = {"message": APP_LOG_LAMBDA_PARSER_PROCESSED_MESSAGE}
-    assert result == log_parser.lambda_handler(event, {})
+    assert result == log_parser.lambda_handler(event, context)
     environ.pop('APP_ACCESS_LOG_BUCKET')
     environ.pop('LOG_TYPE')
     environ.pop('LIMIT_IP_ADDRESS_RANGES_PER_IP_MATCH_CONDITION')
@@ -110,7 +109,7 @@ def test_waf_lambda_parser(waf_log_lambda_parser_test_event_setup):
     environ['LOG_TYPE'] = "waf"
     event = waf_log_lambda_parser_test_event_setup
     result = {"message": WAF_LOG_LAMBDA_PARSER_PROCESSED_MESSAGE}
-    assert result == log_parser.lambda_handler(event, {})
+    assert result == log_parser.lambda_handler(event, context)
     environ.pop('WAF_ACCESS_LOG_BUCKET')
     environ.pop('LOG_TYPE')
 
@@ -120,7 +119,7 @@ def test_waf_lambda_parser_over_ip_range_limit(waf_log_lambda_parser_test_event_
     environ['LIMIT_IP_ADDRESS_RANGES_PER_IP_MATCH_CONDITION'] = '1'
     event = waf_log_lambda_parser_test_event_setup
     result = {"message": WAF_LOG_LAMBDA_PARSER_PROCESSED_MESSAGE}
-    assert result == log_parser.lambda_handler(event, {})
+    assert result == log_parser.lambda_handler(event, context)
     environ.pop('WAF_ACCESS_LOG_BUCKET')
     environ.pop('LOG_TYPE')
     environ.pop('LIMIT_IP_ADDRESS_RANGES_PER_IP_MATCH_CONDITION')

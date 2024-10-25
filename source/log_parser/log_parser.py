@@ -1,15 +1,5 @@
-######################################################################################################################
-#  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.                                           #
-#                                                                                                                    #
-#  Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except in compliance    #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://www.apache.org/licenses/LICENSE-2.0                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
-######################################################################################################################
+#  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#  SPDX-License-Identifier: Apache-2.0
 
 import os
 from os import environ
@@ -17,9 +7,13 @@ from urllib.parse import unquote_plus
 from lib.waflibv2 import WAFLIBv2
 from lib.solution_metrics import send_metrics
 from lib.cw_metrics_util import WAFCloudWatchMetrics
-from lib.logging_util import set_log_level
 from lambda_log_parser import LambdaLogParser
 from athena_log_parser import AthenaLogParser
+from aws_lambda_powertools import Logger
+
+logger = Logger(
+    level=os.getenv('LOG_LEVEL')
+)
 
 scope = os.getenv('SCOPE')
 scanners = 1
@@ -160,39 +154,37 @@ def send_anonymized_usage_data(log):
 # ======================================================================================================================
 # Lambda Entry Point
 # ======================================================================================================================
+@logger.inject_lambda_context
 def lambda_handler(event, _):
-    log = set_log_level()
-    log.info('[lambda_handler] Start')
+    logger.info('[lambda_handler] Start')
 
     result = {}
     try:
         # ----------------------------------------------------------
         # Process event
         # ----------------------------------------------------------
-        log.info(event)
-
-        athena_log_parser = AthenaLogParser(log)
+        athena_log_parser = AthenaLogParser(logger)
 
         if "resourceType" in event:
             athena_log_parser.process_athena_scheduler_event(event)
             result['message'] = "[lambda_handler] Athena scheduler event processed."
-            log.info(result['message'])
+            logger.info(result['message'])
 
         elif 'Records' in event:
-            lambda_log_parser = LambdaLogParser(log)
+            lambda_log_parser = LambdaLogParser(logger)
             for record in event['Records']:
-                process_record(record, log, result, athena_log_parser, lambda_log_parser)
-                send_anonymized_usage_data(log)
+                process_record(record, logger, result, athena_log_parser, lambda_log_parser)
+                send_anonymized_usage_data(logger)
 
         else:
             result['message'] = "[lambda_handler] undefined handler for this type of event"
-            log.info(result['message'])
+            logger.info(result['message'])
 
     except Exception as error:
-        log.error(str(error))
+        logger.error(str(error))
         raise
 
-    log.info('[lambda_handler] End')
+    logger.info('[lambda_handler] End')
     return result
 
 

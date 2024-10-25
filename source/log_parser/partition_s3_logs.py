@@ -1,23 +1,16 @@
-##############################################################################
-#  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.   #
-#                                                                            #
-#  Licensed under the Apache License, Version 2.0 (the "License").           #
-#  You may not use this file except in compliance                            #
-#  with the License. A copy of the License is located at                     #
-#                                                                            #
-#      http://www.apache.org/licenses/LICENSE-2.0                            #
-#                                                                            #
-#  or in the "license" file accompanying this file. This file is             #
-#  distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY  #
-#  KIND, express or implied. See the License for the specific language       #
-#  governing permissions  and limitations under the License.                 #
-##############################################################################
+#  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#  SPDX-License-Identifier: Apache-2.0
 
 import re
-from os import environ
+from os import environ, getenv
 from lib.boto3_util import create_client
-from lib.logging_util import set_log_level
+from aws_lambda_powertools import Logger
 
+logger = Logger(
+    level=getenv('LOG_LEVEL')
+)
+
+@logger.inject_lambda_context
 def lambda_handler(event, _):
     """
     This function is triggered by S3 event to move log files
@@ -30,17 +23,16 @@ def lambda_handler(event, _):
       AWSLogs-Partitioned/year=2020/month=04/day=09/hour=23/
 
     """
-    log = set_log_level()
-    log.debug('[partition_s3_logs lambda_handler] Start')
+    logger.debug('[partition_s3_logs lambda_handler] Start')
     try:
         # ----------------------------------------------------------
         # Process event
         # ----------------------------------------------------------
-        log.info(event)
+        
         
         keep_original_data = str(environ['KEEP_ORIGINAL_DATA'].upper())
         endpoint = str(environ['ENDPOINT'].upper())
-        log.info("\n[partition_s3_logs lambda_handler] KEEP ORIGINAL DATA: %s; End POINT: %s."
+        logger.info("\n[partition_s3_logs lambda_handler] KEEP ORIGINAL DATA: %s; End POINT: %s."
                                  %(keep_original_data, endpoint))
 
         s3 = create_client('s3')
@@ -73,22 +65,22 @@ def lambda_handler(event, _):
             # Copy S3 object to destination
             s3.copy_object(Bucket=bucket, Key=dest, CopySource=source_path)
 
-            log.info("\n[partition_s3_logs lambda_handler] Copied file %s to destination %s"%(source_path, dest_path))
+            logger.info("\n[partition_s3_logs lambda_handler] Copied file %s to destination %s"%(source_path, dest_path))
             
             # Only delete source S3 object from its original folder if keeping original data is no
             if keep_original_data == 'NO':
                 s3.delete_object(Bucket=bucket, Key=key)
-                log.info("\n[partition_s3_logs lambda_handler] Removed file %s"%source_path)
+                logger.info("\n[partition_s3_logs lambda_handler] Removed file %s"%source_path)
                 
             count = count + 1
             
-        log.info("\n[partition_s3_logs lambda_handler] Successfully partitioned %s file(s)."%(str(count)))
+        logger.info("\n[partition_s3_logs lambda_handler] Successfully partitioned %s file(s)."%(str(count)))
 
     except Exception as error:
-        log.error(str(error))
+        logger.error(str(error))
         raise
 
-    log.debug('[partition_s3_logs lambda_handler] End')
+    logger.debug('[partition_s3_logs lambda_handler] End')
 
 
 def parse_cloudfront_logs(key, filename):

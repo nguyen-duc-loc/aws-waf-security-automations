@@ -10,29 +10,35 @@
 #  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
 #  and limitations under the License.                                                                                #
 ######################################################################################################################
+from types import SimpleNamespace
 
 import pytest
 import boto3
 from moto import (
     mock_s3
 )
-class Context:
-    def __init__(self, invoked_function_arn, log_group_name, log_stream_name):
-       self.invoked_function_arn = invoked_function_arn
-       self.log_group_name = log_group_name
-       self.log_stream_name = log_stream_name
+
 
 @pytest.fixture(scope="session")
 def example_context():
-    return Context(':::invoked_function_arn', 'log_group_name', 'log_stream_name')
+    return SimpleNamespace(**{
+    'function_name': 'foo',
+    'memory_limit_in_mb': '512',
+    'invoked_function_arn': ':::invoked_function_arn',
+    'log_group_name': 'log_group_name',
+    'log_stream_name': 'log_stream_name',
+    'aws_request_id': 'baz'
+})
 
 @pytest.fixture(scope="session")
 def successful_response():
     return '{"StatusCode": "200", "Body": {"message": "success"}}'
 
+
 @pytest.fixture(scope="session")
 def error_response():
     return '{"statusCode": "400", "body": {"message": "\'Region\'"}}'
+
 
 @pytest.fixture(scope="session")
 def s3_client():
@@ -40,11 +46,13 @@ def s3_client():
         s3 = boto3.client('s3')
         yield s3
 
+
 @pytest.fixture(scope="session")
 def s3_bucket(s3_client):
     my_bucket = 'bucket_name'
     s3_client.create_bucket(Bucket=my_bucket)
     return my_bucket
+
 
 @pytest.fixture(scope="session")
 def check_requirements_event():
@@ -68,6 +76,7 @@ def check_requirements_event():
         'StackId': 'arn:aws:cloudformation:us-east-2:XXXXXXXXXXXX:stack/wafohio424243/276aee50-e2e9-11ed-89eb-067ac5804c7f'
     }
 
+
 @pytest.fixture(scope="session")
 def create_uuid_event():
     return {
@@ -76,11 +85,12 @@ def create_uuid_event():
         'RequestType': 'Create',
         'ResourceProperties': {
             'ServiceToken': 'arn:aws:lambda:us-east-2:XXXXXXXXXXXX:function:wafohio424243-Helper-xse5nh2WeWlc'},
-            'ResourceType': 'Custom::CreateUUID',
-            'ResponseURL': 'https://cloudformation-custom-resource-response-useast2.s3.us-east-2.amazonaws.com/',
-            'ServiceToken': 'arn:aws:lambda:us-east-2:XXXXXXXXXXXX:function:wafohio424243-Helper-xse5nh2WeWlc',
-            'StackId': 'arn:aws:cloudformation:us-east-2:XXXXXXXXXXXX:stack/wafohio424243/276aee50-e2e9-11ed-89eb-067ac5804c7f'
-        }
+        'ResourceType': 'Custom::CreateUUID',
+        'ResponseURL': 'https://cloudformation-custom-resource-response-useast2.s3.us-east-2.amazonaws.com/',
+        'ServiceToken': 'arn:aws:lambda:us-east-2:XXXXXXXXXXXX:function:wafohio424243-Helper-xse5nh2WeWlc',
+        'StackId': 'arn:aws:cloudformation:us-east-2:XXXXXXXXXXXX:stack/wafohio424243/276aee50-e2e9-11ed-89eb-067ac5804c7f'
+    }
+
 
 @pytest.fixture(scope="session")
 def create_delivery_stream_name_event():
@@ -114,6 +124,7 @@ def create_db_name_event():
         'ServiceToken': 'arn:aws:lambda:us-east-2:XXXXXXXXXXXX:function:wafohio424243-Helper-xse5nh2WeWlc',
         'StackId': 'arn:aws:cloudformation:us-east-2:XXXXXXXXXXXX:stack/wafohio424243/276aee50-e2e9-11ed-89eb-067ac5804c7f'
     }
+
 
 @pytest.fixture(scope="session")
 def erroneous_check_requirements_event():

@@ -1,17 +1,7 @@
-##############################################################################
-#  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.   #
-#                                                                            #
-#  Licensed under the Apache License, Version 2.0 (the "License").           #
-#  You may not use this file except in compliance                            #
-#  with the License. A copy of the License is located at                     #
-#                                                                            #
-#      http://www.apache.org/licenses/LICENSE-2.0                            #
-#                                                                            #
-#  or in the "license" file accompanying this file. This file is             #
-#  distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY  #
-#  KIND, express or implied. See the License for the specific language       #
-#  governing permissions  and limitations under the License.                 #
-##############################################################################
+#  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#  SPDX-License-Identifier: Apache-2.0
+
+from types import SimpleNamespace
 
 from reputation_lists_parser import reputation_lists
 from lib.cw_metrics_util import WAFCloudWatchMetrics
@@ -19,10 +9,17 @@ from os import environ
 import pytest
 import requests
 
+context = SimpleNamespace(**{
+    'function_name': 'foo',
+    'memory_limit_in_mb': '512',
+    'invoked_function_arn': ':::invoked_function_arn',
+    'log_group_name': 'log_group_name',
+    'log_stream_name': 'log_stream_name',
+    'aws_request_id': 'baz'
+})
 
 def test_lambda_handler_raises_exception_if_env_variable_not_present(mocker):
     event = {}
-    context = {}
     mocker.patch.object(WAFCloudWatchMetrics, 'add_waf_cw_metric_to_usage_data')
     with pytest.raises(TypeError):
         reputation_lists.lambda_handler(event, context)
@@ -30,7 +27,6 @@ def test_lambda_handler_raises_exception_if_env_variable_not_present(mocker):
 
 def test_lambda_handler_returns_error_when_populate_ip_sets_function_fails(mocker):
     event = {}
-    context = {}
     environ['URL_LIST'] = '[{"url":"https://www.testmocketenvtest.com"},' \
                           '{"url":"https://www.testmocketenvagaintest.com"}] '
     mocker.patch.object(reputation_lists, 'populate_ipsets', side_effect=Exception('mocked error'))
@@ -41,7 +37,6 @@ def test_lambda_handler_returns_error_when_populate_ip_sets_function_fails(mocke
 
 def test_lambda_handler_returns_success(mocker):
     event = {}
-    context = {}
     environ['URL_LIST'] = '[{"url":"https://www.testmocketenvtest.com"},' \
                           '{"url":"https://www.testmocketenvagaintest.com"}] '
     mocker.patch.object(requests, 'get')

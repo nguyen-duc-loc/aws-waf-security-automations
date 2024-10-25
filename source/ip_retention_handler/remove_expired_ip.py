@@ -1,25 +1,18 @@
-######################################################################################################################
-#  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.                                                #
-#                                                                                                                    #
-#  Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except in compliance    #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://www.apache.org/licenses/LICENSE-2.0                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
-######################################################################################################################
+#  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#  SPDX-License-Identifier: Apache-2.0
 
 from time import sleep
-from os import environ
+from os import environ, getenv
 from datetime import datetime
 from boto3.dynamodb.types import TypeDeserializer
 from lib.waflibv2 import WAFLIBv2
 from lib.sns_util import SNS
 from lib.solution_metrics import send_metrics
-from lib.logging_util import set_log_level
+from aws_lambda_powertools import Logger
 
+logger = Logger(
+    level=getenv('LOG_LEVEL')
+)
 
 waflib = WAFLIBv2()
 
@@ -191,22 +184,21 @@ class RemoveExpiredIP(object):
         response_code = response.status_code
         log.info('[remove_expired_ip: send_anonymized_usage_data] Response Code: {}'.format(response_code))
         log.info("[remove_expired_ip: send_anonymized_usage_data] End")
-    
+
+
+@logger.inject_lambda_context
 def lambda_handler(event, context):
     """
     Invoke functions to delete expired ips from waf ip set. 
     It is triggered by TTL DynamoDB Stream.
     """
-    
-    log = set_log_level()
-    
     try:
-        log.info('[remove_expired_id: lambda_handler] Start')
-        log.info("Lambda Handler Event: \n{}".format(event))
+        logger.info('[remove_expired_id: lambda_handler] Start')
+        logger.info("Lambda Handler Event: \n{}".format(event))
         
         response = {}
                 
-        reip = RemoveExpiredIP(event, log)
+        reip = RemoveExpiredIP(event, logger)
         
         # Remove expired ips in the event records
         for record in event['Records']:
@@ -214,7 +206,7 @@ def lambda_handler(event, context):
             
             # Stop if the REMOVE event is not from DDB Stream triggered by DDB TTL
             if not(is_ddb_stream_event) or reip.is_none(record.get('eventName')) != 'REMOVE':
-                log.info('[remove_expired_id: lambda_handler] The event is Not the IP removal event from DynamoDB Stream triggered by DynamoDB TTL. Skip. End.')
+                logger.info('[remove_expired_id: lambda_handler] The event is Not the IP removal event from DynamoDB Stream triggered by DynamoDB TTL. Skip. End.')
                 return response
                 
             ddb_ip_set = reip.is_none(record.get('dynamodb',{}).get('OldImage',{}))
@@ -223,31 +215,31 @@ def lambda_handler(event, context):
             name = reip.is_none(str(desiralized_ddb_ip_set.get('IPSetName')))
             ip_set_id = reip.is_none(str(desiralized_ddb_ip_set.get('IPSetId')))
             ip_retention_period = reip.is_none(str(desiralized_ddb_ip_set.get('IPRetentionPeriodMinute')))
-            waf_ip_set = reip.get_ip_set(log, scope, name, ip_set_id)
+            waf_ip_set = reip.get_ip_set(logger, scope, name, ip_set_id)
             description = reip.is_none(waf_ip_set.get('IPSet',{}).get('Description'))
             waf_ip_list = reip.is_none(waf_ip_set.get('IPSet',{}).get('Addresses',[]))
             ddb_ip_list = reip.is_none(desiralized_ddb_ip_set.get('IPAdressList', []))
-            keep_ip_list, remove_ip_list = reip.make_ip_list(log, waf_ip_list, ddb_ip_list)
+            keep_ip_list, remove_ip_list = reip.make_ip_list(logger, waf_ip_list, ddb_ip_list)
             
             # Stop if None - no need to update ip set
             if len(remove_ip_list) == 0:
-                log.info('[remove_expired_id: lambda_handler] No IPs to remove. End.')
+                logger.info('[remove_expired_id: lambda_handler] No IPs to remove. End.')
                 return response
 
             lock_token = reip.is_none(str(waf_ip_set.get('LockToken')))
             
-            response = reip.update_ip_set(log, scope, name, ip_set_id, keep_ip_list, lock_token, description)
+            response = reip.update_ip_set(logger, scope, name, ip_set_id, keep_ip_list, lock_token, description)
             
             # Send email notification to user if sns email is configured and ip set is successfully updated 
             if (environ.get('SNS_EMAIL').lower() == 'yes' and response.get('ResponseMetadata',{}).get('HTTPStatusCode') == 200):
-                response = reip.send_notification(log, environ.get('SNS_TOPIC_ARN'), name, ip_set_id, ip_retention_period, context.function_name)
+                response = reip.send_notification(logger, environ.get('SNS_TOPIC_ARN'), name, ip_set_id, ip_retention_period, context.function_name)
         
             # send anonymized solution metrics
-            reip.send_anonymized_usage_data(log, remove_ip_list, name)
+            reip.send_anonymized_usage_data(logger, remove_ip_list, name)
 
     except Exception as error:
-        log.error(str(error))
+        logger.error(str(error))
         raise
     
-    log.info('[remove_expired_id: lambda_handler] End')
+    logger.info('[remove_expired_id: lambda_handler] End')
     return response
