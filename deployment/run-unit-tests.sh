@@ -16,22 +16,6 @@ source_dir="$(cd $template_dir/../source; pwd -P)"
 echo "Current directory: $template_dir"
 echo "Source directory: $source_dir"
 
-setup_python_env() {
-	if [ -d "./.venv-test" ]; then
-		echo "Reusing already setup python venv in ./.venv-test. Delete ./.venv-test if you want a fresh one created."
-		return
-	fi
-	echo "Setting up python venv"
-	python3 -m venv .venv-test
-	echo "Initiating virtual environment"
-	source .venv-test/bin/activate
-	echo "Installing python packages"
-	pip3 install -r requirements.txt --target .
-	pip3 install -r requirements_dev.txt
-	echo "deactivate virtual environment"
-	deactivate
-}
-
 run_python_lambda_test() {
 	lambda_name=$1
 	lambda_description=$2
@@ -39,23 +23,34 @@ run_python_lambda_test() {
 	echo "[Test] Python Unit Test: $lambda_description"
 	echo "------------------------------------------------------------------------------"
 
-    cd $source_dir/$lambda_name
-    echo "run_python_lambda_test: Current directory: $source_dir/$lambda_name"
+  cd $source_dir/$lambda_name
+  echo "run_python_lambda_test: Current directory: $source_dir/$lambda_name"
 
-    [ "${CLEAN:-true}" = "true" ] && rm -fr .venv-test
+  echo "Installing python packages"
 
-	setup_python_env
+  # Check if poetry is available in the shell
+  if command -v poetry >/dev/null 2>&1; then
+    POETRY_COMMAND="poetry"
+  elif [ -n "$POETRY_HOME" ] && [ -x "$POETRY_HOME/bin/poetry" ]; then
+    POETRY_COMMAND="$POETRY_HOME/bin/poetry"
+  else
+    echo "Poetry is not available. Aborting script." >&2
+    exit 1
+  fi
 
-    echo "Initiating virtual environment"
-	source .venv-test/bin/activate
+  # This creates a virtual environment based on the project name in pyproject.toml.
+  "$POETRY_COMMAND" install
 
-    # Set coverage report path
+  # Activate the virtual environment.
+  source $("$POETRY_COMMAND" env info --path)/bin/activate
+
+  # Set coverage report path
 	mkdir -p $source_dir/test/coverage-reports
 	coverage_report_path=$source_dir/test/coverage-reports/$lambda_name.coverage.xml
 	echo "coverage report path set to $coverage_report_path"
 
-    # Run unit tests with coverage
-    python3 -m pytest --cov --cov-report=term-missing --cov-report "xml:$coverage_report_path"
+  # Run unit tests with coverage
+  python3 -m pytest --cov --cov-report=term-missing --cov-report "xml:$coverage_report_path"
 
 	if [ "$?" = "1" ]; then
 		echo "(deployment/run-unit-tests.sh) ERROR: there is likely output above." 1>&2
@@ -67,11 +62,10 @@ run_python_lambda_test() {
     # absolute paths for source directories, this substitution is used to convert each absolute source directory
     # path to the corresponding project relative path. The $source_dir holds the absolute path for source directory.
 	sed -i -e "s,<source>$source_dir,<source>source,g" $coverage_report_path
-	echo "deactivate virtual environment"
-	deactivate
+
+  deactivate
 
 	if [ "${CLEAN:-true}" = "true" ]; then
-		rm -fr .venv-test
 		# Note: leaving $source_dir/test/coverage-reports to allow further processing of coverage reports
 		rm -fr coverage
 		rm .coverage

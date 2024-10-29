@@ -1,19 +1,10 @@
-######################################################################################################################
-#  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.                                                #
-#                                                                                                                    #
-#  Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except in compliance    #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://www.apache.org/licenses/LICENSE-2.0                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
-######################################################################################################################
+#  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#  SPDX-License-Identifier: Apache-2.0
 
 import json
+from os import getenv
+
 from lib.cfn_response import send_response
-from lib.logging_util import set_log_level
 from operations import (
     operation_types,
     set_log_group_retention,
@@ -26,6 +17,12 @@ from operations import (
     add_athena_partitions
 )
 from operations.operation_types import RESOURCE_TYPE
+from aws_lambda_powertools import Logger
+
+logger = Logger(
+    level=getenv('LOG_LEVEL')
+)
+
 
 operations_dictionary = {
     operation_types.SET_CLOUDWATCH_LOGGROUP_RETENTION: set_log_group_retention.execute,
@@ -52,8 +49,8 @@ def get_function_for_resource(resource, log):
 # ======================================================================================================================
 # Lambda Entry Point
 # ======================================================================================================================
-def lambda_handler(event, context):    
-    log = set_log_level()
+@logger.inject_lambda_context
+def lambda_handler(event, context):
     response_status = 'SUCCESS'
     reason = None
     response_data = {}
@@ -62,26 +59,23 @@ def lambda_handler(event, context):
         'StatusCode': '200',
         'Body': {'message': 'success'}
     }
-    
-    log.info(f'context: {context}')
-    
+
     try:
         # ----------------------------------------------------------
         # Read inputs parameters
         # ----------------------------------------------------------
-        log.info(event)
         request_type = event.get('RequestType', "").upper()
-        log.info(request_type)
+        logger.info(request_type)
 
         # ----------------------------------------------------------
         # Process event
         # ----------------------------------------------------------
-        operation = get_function_for_resource(event[RESOURCE_TYPE], log)
+        operation = get_function_for_resource(event[RESOURCE_TYPE], logger)
         if operation:
-            operation(event, context, log)
+            operation(event, context, logger)
 
     except Exception as error:
-        log.error(error)
+        logger.error(error)
         response_status = 'FAILED'
         reason = str(error)
         result = {
@@ -94,6 +88,6 @@ def lambda_handler(event, context):
         # Send Result
         # ------------------------------------------------------------------
         if 'ResponseURL' in event:
-            send_response(log, event, context, response_status, response_data, resource_id, reason)
+            send_response(logger, event, context, response_status, response_data, resource_id, reason)
 
         return json.dumps(result) #NOSONAR needed to send a response of the result

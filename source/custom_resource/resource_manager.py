@@ -10,7 +10,7 @@
 #  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
 #  and limitations under the License.                                                                                #
 ######################################################################################################################
-
+import html
 import json
 import botocore
 import os
@@ -24,6 +24,9 @@ AWS_LOGS_PATH_PREFIX = 'AWSLogs/'
 S3_OBJECT_CREATED = 's3:ObjectCreated:*'
 EMPTY_BUCKET_NAME_EXCEPTION = Exception('Failed to configure access log bucket. Name cannot be empty!')
 
+
+def sanitize_string(s):
+    return html.escape(str(s))
 
 class ResourceManager:
     def __init__(self, log: Logger):
@@ -612,7 +615,19 @@ class ResourceManager:
                 resource_props['AthenaWorkGroup']
                 )
         )
-        self.log.info("[add_athena_partitions] Lambda invocation response:\n%s" % response)
+
+        # Extract relevant information from the response
+        status_code = response.get('StatusCode')
+        payload = json.loads(response.get('Payload').read().decode('utf-8'))
+
+        # Sanitize the extracted information
+        sanitized_status = sanitize_string(status_code)
+        sanitized_payload = json.dumps({k: sanitize_string(v) for k, v in payload.items()})
+
+        # Log the sanitized information
+        self.log.info(
+            f"[add_athena_partitions] Lambda invocation response:\nStatus Code: {sanitized_status}\nPayload: {sanitized_payload}")
+
         self.log.info("[add_athena_partitions] End")
     
     

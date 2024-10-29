@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.5] - 2024-10-24
+
+### Changed
+
+- Add poetry.lock to pin dependency versions for Python code
+- Adapt build scripts to use Poetry for dependency management
+- Replace native Python logger with aws_lambda_powertools logger
+
+## [4.0.4] - 2024-09-23
+
+### Fixed
+- Patched dependency version of `requests` to `2.32.3` to mitigate [CVE-2024-3651](https://nvd.nist.gov/vuln/detail/CVE-2024-3651)
+- Pinned all dependencies to specific versions for reproducable builds and enable security scanning
+- Allow to install latest version of `urllib3` as transitive dependency
 
 ## [4.0.4] - 2024-09-23
 

@@ -1,25 +1,24 @@
-###############################################################################
-#  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.    #
-#                                                                             #
-#  Licensed under the Apache License, Version 2.0 (the "License").            #
-#  You may not use this file except in compliance with the License.
-#  A copy of the License is located at                                        #
-#                                                                             #
-#      http://www.apache.org/licenses/LICENSE-2.0                             #
-#                                                                             #
-#  or in the "license" file accompanying this file. This file is distributed  #
-#  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, express #
-#  or implied. See the License for the specific language governing permissions#
-#  and limitations under the License.                                         #
-###############################################################################
+#  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#  SPDX-License-Identifier: Apache-2.0
+
+from types import SimpleNamespace
 
 from add_athena_partitions import lambda_handler
+
+context = SimpleNamespace(**{
+    'function_name': 'foo',
+    'memory_limit_in_mb': '512',
+    'invoked_function_arn': ':::invoked_function_arn',
+    'log_group_name': 'log_group_name',
+    'log_stream_name': 'log_stream_name',
+    'aws_request_id': 'baz'
+})
 
 def test_add_athena_partitions(athena_partitions_test_event_setup):
     try: 
         event = athena_partitions_test_event_setup
         result = False
-        lambda_handler(event, {})
+        lambda_handler(event, context)
         result = True
     except Exception:
         raise
@@ -30,7 +29,7 @@ def test_add_athena_partitions(athena_partitions_non_existent_work_group_test_ev
     try: 
         event = athena_partitions_non_existent_work_group_test_event_setup
         result = False
-        lambda_handler(event, {})
+        lambda_handler(event, context)
         result = True
     except Exception:
         assert result == False

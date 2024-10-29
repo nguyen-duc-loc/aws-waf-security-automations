@@ -1,5 +1,10 @@
 #!/bin/bash
-# This assumes all of the OS-level configuration has been completed and git repo has already been cloned 
+#
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# This assumes all of the OS-level configuration has been completed and git repo has already been cloned
 # 
 # This script should be run from the repo's deployment directory 
 # cd deployment 
@@ -79,10 +84,21 @@ do
 done
 
 
+  # Check if poetry is available in the shell
+  if command -v poetry >/dev/null 2>&1; then
+    POETRY_COMMAND="poetry"
+  elif [ -n "$POETRY_HOME" ] && [ -x "$POETRY_HOME/bin/poetry" ]; then
+    POETRY_COMMAND="$POETRY_HOME/bin/poetry"
+  else
+    echo "Poetry is not available. Aborting script." >&2
+    exit 1
+  fi
+
 echo "------------------------------------------------------------------------------"
 echo "[Packing] Log Parser"
 echo "------------------------------------------------------------------------------"
 cd "$source_dir"/log_parser || exit 1
+"$POETRY_COMMAND" export --without dev -f requirements.txt --output requirements.txt --without-hashes
 pip3 install -r requirements.txt --target ./package
 cd "$source_dir"/log_parser/package || exit 1
 zip -q -r9 "$build_dist_dir"/log_parser.zip .
@@ -97,6 +113,7 @@ echo "--------------------------------------------------------------------------
 echo "[Packing] Access Handler"
 echo "------------------------------------------------------------------------------"
 cd "$source_dir"/access_handler || exit 1
+"$POETRY_COMMAND" export --without dev -f requirements.txt --output requirements.txt --without-hashes
 pip3 install -r requirements.txt --target ./package
 cd "$source_dir"/access_handler/package || exit 1
 zip -q -r9 "$build_dist_dir"/access_handler.zip .
@@ -111,6 +128,7 @@ echo "--------------------------------------------------------------------------
 echo "[Packing] IP Lists Parser"
 echo "------------------------------------------------------------------------------"
 cd "$source_dir"/reputation_lists_parser || exit 1
+"$POETRY_COMMAND" export --without dev -f requirements.txt --output requirements.txt --without-hashes
 pip3 install -r requirements.txt --target ./package
 cd "$source_dir"/reputation_lists_parser/package || exit 1
 zip -q -r9 "$build_dist_dir"/reputation_lists_parser.zip .
@@ -125,6 +143,7 @@ echo "--------------------------------------------------------------------------
 echo "[Packing] Custom Resource"
 echo "------------------------------------------------------------------------------"
 cd "$source_dir"/custom_resource || exit 1
+"$POETRY_COMMAND" export --without dev -f requirements.txt --output requirements.txt --without-hashes
 pip3 install -r requirements.txt --target ./package
 cd "$source_dir"/custom_resource/package || exit 1
 zip -q -r9 "$build_dist_dir"/custom_resource.zip .
@@ -139,6 +158,7 @@ echo "--------------------------------------------------------------------------
 echo "[Packing] Helper"
 echo "------------------------------------------------------------------------------"
 cd "$source_dir"/helper || exit 1
+"$POETRY_COMMAND" export --without dev -f requirements.txt --output requirements.txt --without-hashes
 pip3 install -r requirements.txt --target ./package
 cd "$source_dir"/helper/package || exit 1
 zip -q -r9 "$build_dist_dir"/helper.zip ./*
@@ -153,6 +173,7 @@ echo "--------------------------------------------------------------------------
 echo "[Packing] Timer"
 echo "------------------------------------------------------------------------------"
 cd "$source_dir"/timer || exit 1
+"$POETRY_COMMAND" export --without dev -f requirements.txt --output requirements.txt --without-hashes
 pip3 install -r requirements.txt --target ./package
 cd "$source_dir"/timer/package || exit 1
 zip -q -r9 "$build_dist_dir"/timer.zip ./*
@@ -169,6 +190,7 @@ echo "--------------------------------------------------------------------------
 echo "[Packing] IP Retention Handler"
 echo "------------------------------------------------------------------------------"
 cd "$source_dir"/ip_retention_handler || exit 1
+"$POETRY_COMMAND" export --without dev -f requirements.txt --output requirements.txt --without-hashes
 pip3 install -r requirements.txt --target ./package
 cd "$source_dir"/ip_retention_handler/package || exit 1
 zip -q -r9 "$build_dist_dir"/ip_retention_handler.zip ./*

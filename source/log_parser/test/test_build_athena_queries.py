@@ -167,8 +167,7 @@ def test_build_athena_queries_for_waf_logs_eight():
 
 @freeze_time("2020-05-08 02:21:34", tz_offset=-4)
 def test_add_athena_partitions_build_query_string():
-    query_string = add_athena_partitions.build_athena_query(
-        log, database_name, table_name)
+    query_string = add_athena_partitions.build_athena_query(database_name, table_name)
 
     with open('./test/test_data/athena_partitions_query.txt', 'r') as file:
         athena_partitions_query = file.read()

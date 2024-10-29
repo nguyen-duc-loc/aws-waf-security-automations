@@ -1,21 +1,18 @@
+#  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#  SPDX-License-Identifier: Apache-2.0
+
 ######################################################################################################################
-#  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.                                                #
-#                                                                                                                    #
-#  Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except in compliance    #
-#  with the License. A copy of the License is located at                                                             #
-#                                                                                                                    #
-#      http://www.apache.org/licenses/LICENSE-2.0                                                                    #
-#                                                                                                                    #
-#  or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES #
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-#  and limitations under the License.                                                                                #
 ######################################################################################################################
 
-from os import environ
+from os import environ, getenv
 from calendar import timegm
 from datetime import datetime, timedelta
 from lib.dynamodb_util import DDB
-from lib.logging_util import set_log_level
+from aws_lambda_powertools import Logger
+
+logger = Logger(
+    level=getenv('LOG_LEVEL')
+)
 
 class SetIPRetention(object):
     """
@@ -113,18 +110,15 @@ class SetIPRetention(object):
 
         return response
 
-
+@logger.inject_lambda_context
 def lambda_handler(event, _):
     """
     Invoke functions to put ip retention info into ddb table. 
     It is triggered by a CloudWatch events rule.
     """
-    
-    log = set_log_level()
-    
     try:
-        log.info('[set_ip_retention: lambda_handler] Start')
-        log.info("Lambda Handler Event: \n{}".format(event))
+        logger.info('[set_ip_retention: lambda_handler] Start')
+        logger.info("Lambda Handler Event: \n{}".format(event))
         
         event_detail = event.get('detail',{})
         event_user_arn = event_detail.get('userIdentity',{}).get('arn')
@@ -132,15 +126,15 @@ def lambda_handler(event, _):
         
         # If event for UpdateIPSet api call is not created by the RemoveExpiredIP lambda, continue to put item into DDB
         if event_user_arn.find(environ.get('REMOVE_EXPIRED_IP_LAMBDA_ROLE_NAME')) == -1:
-            sipr = SetIPRetention(event_detail, log)
+            sipr = SetIPRetention(event_detail, logger)
             response = sipr.put_item(environ.get('TABLE_NAME'))
         else:
             message = "The event for UpdateIPSet API call was made by RemoveExpiredIP lambda instead of user. Skip."
-            log.info(message)
+            logger.info(message)
             response = {"Message": message}
     except Exception as error:
-        log.error(str(error))
+        logger.error(str(error))
         raise
     
-    log.info('[set_ip_retention: lambda_handler] End')
+    logger.info('[set_ip_retention: lambda_handler] End')
     return response
