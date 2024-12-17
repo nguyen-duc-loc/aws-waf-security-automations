@@ -430,7 +430,7 @@ Resources:
       Code:
         S3Bucket: !Join ['-', [!FindInMap ["SourceCode", "General", "SourceBucket"], !Ref 'AWS::Region']]
         S3Key: !Join ['/', [!FindInMap ["SourceCode", "General", "KeyPrefix"], 'timer.zip']]
-      Runtime: python3.10
+      Runtime: python3.12
       MemorySize: 128
       Timeout: 300
       Environment:

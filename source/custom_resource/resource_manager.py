@@ -622,7 +622,10 @@ class ResourceManager:
 
         # Sanitize the extracted information
         sanitized_status = sanitize_string(status_code)
-        sanitized_payload = json.dumps({k: sanitize_string(v) for k, v in payload.items()})
+        if payload and payload.items():
+            sanitized_payload = json.dumps({k: sanitize_string(v) for k, v in payload.items()})
+        else:
+            sanitized_payload = None
 
         # Log the sanitized information
         self.log.info(

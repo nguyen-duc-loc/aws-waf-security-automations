@@ -14,7 +14,7 @@
 - [File Structure](#file-structure)
 - [License](#license)
 
-<a name="solution-overview"></a>
+---
 
 # Solution overview
 
@@ -26,14 +26,11 @@ You can install this solution in your AWS accounts by launching the provided AWS
 
 For a detailed solution implementation guide, refer to Solution Landing Page [Security Automations for AWS WAF](https://aws.amazon.com/solutions/implementations/security-automations-for-aws-waf).
 
-<a name="architecture-diagram"></a>
+---
 
 # Architecture diagram
 
-<p align="center">
-  <img src="source/image/architecture_diagram.png">
-  <br/>
-</p>
+![Diagram](source/image/architecture_diagram.png)
 
 *Security Automations for AWS WAF architecture*
 
@@ -49,18 +46,17 @@ The components of this solution can be grouped into the following areas of prote
 * **IP Reputation Lists (H)** – This component is the IP Lists Parser Lambda function that checks third-party IP reputation lists hourly for new ranges to block. These lists include the Spamhaus Don’t Route Or Peer (DROP) and Extended DROP (EDROP) lists, the Proofpoint Emerging Threats IP list, and the Tor exit node list.
 * **Bad Bot (I)** – This component automatically sets up a honeypot, which is a security mechanism intended to lure and deflect an attempted attack. 
 
-<a name="customizing-the-solution"></a>
+---
+
 
 # Customizing the solution
 
-<a name="prerequisites-for-customization"></a>
 
 ## Prerequisites for customization
 
 - [AWS Command Line Interface](https://aws.amazon.com/cli/)
-- Python 3.10
-
-<a name="build"></a>
+- Python 3.12
+- Poetry
 
 ## Build
 
@@ -120,7 +116,6 @@ cd <rootDir>/deployment
 chmod +x ./build-s3-dist.sh && ./build-s3-dist.sh $TEMPLATE_OUTPUT_BUCKET $DIST_OUTPUT_BUCKET $SOLUTION_NAME $VERSION
 ```
 
-<a name="upload-deployment-assets"></a>
 
 ## Upload deployment assets
 
@@ -131,7 +126,6 @@ aws s3 cp ./deployment/regional-s3-assets s3://$DIST_OUTPUT_BUCKET-$AWS_REGION/$
 
 **Note:** You must use a proper ACL and profile for the copy operation as applicable. Using randomized bucket names is recommended.
 
-<a name="deploy"></a>
 
 ## Deploy
 
@@ -140,13 +134,13 @@ aws s3 cp ./deployment/regional-s3-assets s3://$DIST_OUTPUT_BUCKET-$AWS_REGION/$
 
 **Note:** When deploying the template for your CloudFront endpoint, you can launch it only from the `us-east-1` Region.
 
-<a name="file-structure"></a>
+---
 
 # File structure
 
 This project consists of microservices that facilitate the functional areas of the solution. These microservices are deployed to a serverless environment in AWS Lambda.
 
-<pre>
+```
 |-deployment/ [folder containing templates and build scripts]
 |-source/
   |-access_handler/         [microservice for processing bad bots honeypot endpoint access. This AWS Lambda function intercepts the suspicious request and adds the source IP address to the AWS WAF block list]
@@ -158,15 +152,16 @@ This project consists of microservices that facilitate the functional areas of t
   |-log_parser/             [microservice for processing access logs searching for suspicious behavior and add the corresponding source IP addresses to an AWS WAF block list]
   |-reputation_lists_parser/ [microservice for processing third-party IP reputation lists and add malicious IP addresses to an AWS WAF block list]
   |-timer/                   [creates a sleep function for cloudformation to pace the creation of ip_sets]
-</pre>
+```
 
-<a name="Collection of operational metrics"></a>
+---
 
 # Collection of operational metrics
 
 This solution collects anonymized operational metrics to help AWS improve the quality and features of the solution. For more information, including how to disable this capability, please see the [implementation guide](https://docs.aws.amazon.com/solutions/latest/security-automations-for-aws-waf/reference.html).
 
-<a name="license"></a>
+
+---
 
 # License
 
