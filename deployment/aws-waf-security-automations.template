@@ -1472,7 +1472,7 @@ Resources:
           LOG_LEVEL: !FindInMap ["Solution", "Data", "LogLevel"]
           SCOPE: !If [AlbEndpoint, 'REGIONAL', 'CLOUDFRONT']
           USER_AGENT_EXTRA: !FindInMap [Solution, UserAgent, UserAgentExtra]
-      Runtime: python3.10
+      Runtime: python3.12
       MemorySize: 128
       Timeout: 300
     Metadata:
@@ -1798,7 +1798,7 @@ Resources:
           METRICS_URL: !FindInMap [Solution, Data, MetricsURL]
           USER_AGENT_EXTRA: !FindInMap [Solution, UserAgent, UserAgentExtra]
           Version: "%VERSION%"
-      Runtime: python3.10
+      Runtime: python3.12
       MemorySize: 512
       Timeout: 300
     Metadata:
@@ -1830,7 +1830,7 @@ Resources:
           KEEP_ORIGINAL_DATA: !Ref KeepDataInOriginalS3Location
           ENDPOINT: !Ref EndpointType
           USER_AGENT_EXTRA: !FindInMap [Solution, UserAgent, UserAgentExtra]
-      Runtime: python3.10
+      Runtime: python3.12
       MemorySize: 512
       Timeout: 300
     Metadata:
@@ -1859,7 +1859,7 @@ Resources:
         Variables:
           LOG_LEVEL: !FindInMap ["Solution", "Data", "LogLevel"]
           USER_AGENT_EXTRA: !FindInMap [Solution, UserAgent, UserAgentExtra]
-      Runtime: python3.10
+      Runtime: python3.12
       MemorySize: 512
       Timeout: 300
     Metadata:
@@ -1892,7 +1892,7 @@ Resources:
           IP_RETENTION_PERIOD_DENIED_MINUTE: !Ref IPRetentionPeriodDeniedParam
           REMOVE_EXPIRED_IP_LAMBDA_ROLE_NAME: !Ref LambdaRoleRemoveExpiredIP
           USER_AGENT_EXTRA: !FindInMap [Solution, UserAgent, UserAgentExtra]
-      Runtime: python3.10
+      Runtime: python3.12
       MemorySize: 128
       Timeout: 300
     Metadata:
@@ -1925,7 +1925,7 @@ Resources:
           METRICS_URL: !FindInMap [Solution, Data, MetricsURL]
           USER_AGENT_EXTRA: !FindInMap [Solution, UserAgent, UserAgentExtra]
           Version: "%VERSION%"
-      Runtime: python3.10
+      Runtime: python3.12
       MemorySize: 512
       Timeout: 300
     Metadata:
@@ -2107,7 +2107,7 @@ Resources:
       Code:
         S3Bucket: !Join ['-', [!FindInMap ["SourceCode", "General", "SourceBucket"], !Ref 'AWS::Region']]
         S3Key: !Join ['/', [!FindInMap ["SourceCode", "General", "KeyPrefix"], 'reputation_lists_parser.zip']]
-      Runtime: python3.10
+      Runtime: python3.12
       MemorySize: 512
       Timeout: 300
       Environment:
@@ -2215,7 +2215,7 @@ Resources:
           STACK_NAME: !Ref 'AWS::StackName'
           USER_AGENT_EXTRA: !FindInMap [Solution, UserAgent, UserAgentExtra]
           Version: "%VERSION%"
-      Runtime: python3.10
+      Runtime: python3.12
       MemorySize: 128
       Timeout: 300
     Metadata:
@@ -2409,7 +2409,7 @@ Resources:
           USER_AGENT_EXTRA: !FindInMap [Solution, UserAgent, UserAgentExtra]
           Version: "%VERSION%"
           UUID: !GetAtt CreateUniqueID.UUID
-      Runtime: python3.10
+      Runtime: python3.12
       MemorySize: 128
       Timeout: 300
     Metadata:

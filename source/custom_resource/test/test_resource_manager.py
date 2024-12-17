@@ -12,13 +12,17 @@
 ######################################################################################################################
 
 import logging
+import json
+import pytest
 from resource_manager import ResourceManager
+from unittest.mock import patch, MagicMock
 
 log_level = 'DEBUG'
 logging.getLogger().setLevel(log_level)
 log = logging.getLogger('test_resource_manager')
 
 resource_manager = ResourceManager(log)
+
 
 def test_get_params_waf_event():
     event = {
@@ -276,3 +280,115 @@ def test_update_lambda_config():
     )
     expected = {'LambdaFunctionConfigurations': [{'LambdaFunctionArn': 'NoMatch'}]}
     assert toModify == expected
+
+@pytest.fixture
+def resource_manager_magicmock():
+    return ResourceManager(MagicMock())
+
+@patch('resource_manager.create_client')
+def test_add_athena_partitions(mock_create_client, resource_manager_magicmock):
+    """
+    Test add_athena_partitions method with valid payload and items
+    """
+    mock_lambda_client = MagicMock()
+    mock_create_client.return_value = mock_lambda_client
+    
+    # Create the response with proper JSON payload
+    mock_response = {
+        'StatusCode': 200,
+        'Payload': MagicMock()
+    }
+    # Set the read() return value as encoded JSON bytes
+    mock_response['Payload'].read.return_value = json.dumps({
+        "status": "success",
+        "message": "Partitions added successfully"
+    }).encode('utf-8')
+    
+    mock_lambda_client.invoke.return_value = mock_response
+
+    event = {
+        'ResourceProperties': {
+            'AddAthenaPartitionsLambda': 'arn:aws:lambda:region:account:function:test-function:1',
+            'ResourceType': 'Custom::AddAthenaPartitions',
+            'GlueAccessLogsDatabase': 'test-database',
+            'AppAccessLogBucket': 'XXXXXXXXXXX',
+            'GlueAppAccessLogsTable': 'test-app-table',
+            'GlueWafAccessLogsTable': 'test-waf-table',
+            'WafLogBucket': 'XXXXXXXXXXXXXXX',
+            'AthenaWorkGroup': 'test-workgroup'
+        }
+    }
+
+    resource_manager.add_athena_partitions(event)
+
+    mock_create_client.assert_called_once_with('lambda')
+    mock_lambda_client.invoke.assert_called_once()
+
+@patch('resource_manager.create_client')
+def test_add_athena_partitions_with_empty_payload(mock_create_client, resource_manager_magicmock):
+    """
+    Test add_athena_partitions method with empty payload
+    """
+    mock_lambda_client = MagicMock()
+    mock_create_client.return_value = mock_lambda_client
+    
+    # Create a mock response with minimal valid JSON payload
+    mock_response = {
+        'StatusCode': 200,
+        'Payload': MagicMock()
+    }
+    
+    # Configure the mock payload to return a null payload
+    mock_response['Payload'].read.return_value = b'{}'
+    
+    mock_lambda_client.invoke.return_value = mock_response
+
+    event = {
+        'ResourceProperties': {
+            'AddAthenaPartitionsLambda': 'arn:aws:lambda:region:account:function:test-function:1',
+            'ResourceType': 'Custom::AddAthenaPartitions',
+            'GlueAccessLogsDatabase': 'test-database',
+            'AppAccessLogBucket': 'XXXXXXXXXXX',
+            'GlueAppAccessLogsTable': 'test-app-table',
+            'GlueWafAccessLogsTable': 'test-waf-table',
+            'WafLogBucket': 'XXXXXXXXXXXXXXX',
+            'AthenaWorkGroup': 'test-workgroup'
+        }
+    }
+
+    resource_manager.add_athena_partitions(event)
+
+    mock_create_client.assert_called_once_with('lambda')
+    mock_lambda_client.invoke.assert_called_once()
+
+    
+
+def test_add_athena_partitions_empty_input():
+    """Test add_athena_partitions with empty input"""
+    with pytest.raises(KeyError):
+        resource_manager.add_athena_partitions({})
+
+
+def test_add_athena_partitions_invalid_json_response():
+    """Test add_athena_partitions when Lambda returns invalid JSON"""
+    event = {
+        'ResourceProperties': {
+            'ResourceType': 'CREATE',
+            'AddAthenaPartitionsLambda': 'arn:aws:lambda:us-west-2:123456789012:function:test-function',
+            'GlueAccessLogsDatabase': 'test-database',
+            'AppAccessLogBucket': 'XXXXXXXXXXX',
+            'GlueAppAccessLogsTable': 'test-table',
+            'GlueWafAccessLogsTable': 'test-waf-table',
+            'WafLogBucket': 'XXXXXXXXXXXXXXX',
+            'AthenaWorkGroup': 'test-workgroup'
+        }
+    }
+    with patch('resource_manager.create_client') as mock_create_client:
+        mock_lambda = MagicMock()
+        mock_create_client.return_value = mock_lambda
+        mock_lambda.invoke.return_value = {
+            'StatusCode': 200,
+            'Payload': MagicMock(read=lambda: 'Invalid JSON'.encode('utf-8'))
+        }
+        with pytest.raises(json.JSONDecodeError):
+            resource_manager.add_athena_partitions(event)

@@ -104,7 +104,7 @@ class AthenaLogParser(object):
             'general': {},
             'uriList': {}
         }
-        utc_now_timestamp_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z%z")
+        utc_now_timestamp_str = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S %Z%z")
         with open(local_file_path, 'r') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:

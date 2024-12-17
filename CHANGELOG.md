@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.6] - 2024-12-17
+
+### Changed
+
+- Update the lambda to python 3.12
+
+### Fixed
+
+- Added a check for payload for logging before sanitizing and logging  [Github issue 274](https://github.com/aws-solutions/aws-waf-security-automations/issues/274)
+
 ## [4.0.5] - 2024-10-24
 
 ### Changed
@@ -15,13 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [4.0.4] - 2024-09-23
 
 ### Fixed
-- Patched dependency version of `requests` to `2.32.3` to mitigate [CVE-2024-3651](https://nvd.nist.gov/vuln/detail/CVE-2024-3651)
-- Pinned all dependencies to specific versions for reproducable builds and enable security scanning
-- Allow to install latest version of `urllib3` as transitive dependency
 
-## [4.0.4] - 2024-09-23
-
-### Fixed
 - Patched dependency version of `requests` to `2.32.3` to mitigate [CVE-2024-3651](https://nvd.nist.gov/vuln/detail/CVE-2024-3651)
 - Pinned all dependencies to specific versions for reproducable builds and enable security scanning
 - Allow to install latest version of `urllib3` as transitive dependency
@@ -53,7 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for 10 new AWS Managed Rules rule groups (AMR)
 - Added support for country and URI configurations in HTTP Flood Athena log parser
 - Added support for user-defined S3 prefix for application access log bucket
-- Added support for CloudWatch log retention period configuration 
+- Added support for CloudWatch log retention period configuration
 - Added support for multiple solution deployments in the same account and region
 - Added support for exporting CloudFormation stack output values
 - Replaced the hard coded amazonaws.com with {AWS::URLSuffix} in BadBotHoneypot API endpoint
@@ -94,9 +98,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added support for configuring oversize handling for requests components
-- Added support for configuring sensitivity level for SQL injection rule 
+- Added support for configuring sensitivity level for SQL injection rule
 
-## [3.2] - 2021-09-22
+## [3.2.0] - 2021-09-22
 
 ### Added
 
@@ -106,7 +110,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Bug fixes
 
-## [3.1] - 2020-10-22
+## [3.1.0] - 2020-10-22
 
 ### Changed
 
@@ -114,7 +118,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added partition variable to all ARNs
 - Updated bug report
 
-## [3.0] - 2020-07-08
+## [3.0.0] - 2020-07-08
 
 ### Added
 
